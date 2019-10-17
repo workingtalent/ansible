@@ -1,0 +1,1 @@
+server-01 ansible_host=YOUR_IP ansible_user=user3

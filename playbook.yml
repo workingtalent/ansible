@@ -1,0 +1,72 @@
+---
+
+- hosts: all
+  tasks:
+    - name: Ensure user01 is present and added to sudo group
+      user:
+        name: user01
+        state: present
+        groups: sudo
+        append: yes
+      become: yes
+
+    - name: Add SSH key to user01
+      authorized_key:
+        user: user01
+        state: present
+        key: https://gist.githubusercontent.com/brianveltman/7b8ce60a7a8193fbcdfb4e7187eccb9e/raw/504d8f7541fd2c152f4083f0cf27bd9596dac723/id_rsa.pub
+      become: yes
+
+    - name: "Allow sudo users to impersonate and sudo without a password"
+      lineinfile:
+        dest: "/etc/sudoers"
+        state: "present"
+        regexp: "^%sudo"
+        line: "%sudo ALL=(ALL:ALL) NOPASSWD: ALL"
+      become: yes
+
+    - name: Block root logins with SSH
+      lineinfile:
+        dest: "/etc/ssh/sshd_config"
+        state: "present"
+        regexp: "PermitRootLogin"
+        line: "PermitRootLogin no"
+      become: yes
+
+    - name: Enable SSH public key authentication
+      lineinfile:
+        dest: "/etc/ssh/sshd_config"
+        state: "present"
+        regexp: "PubkeyAuthentication"
+        line: "PubkeyAuthentication yes"
+      become: yes
+
+    - name: Disable SSH username password authentication
+      lineinfile:
+        dest: "/etc/ssh/sshd_config"
+        state: "present"
+        regexp: "PasswordAuthentication"
+        line: "PasswordAuthentication no"
+      become: yes
+
+    - name: Specificy authorized_keys file
+      lineinfile:
+        dest: "/etc/ssh/sshd_config"
+        state: "present"
+        regexp: "AuthorizedKeysFile"
+        line: "AuthorizedKeysFile .ssh/authorized_keys"
+      become: yes
+
+    - name: Do not permit empty passwords for SSH
+      lineinfile:
+        dest: "/etc/ssh/sshd_config"
+        state: "present"
+        regexp: "PermitEmptyPasswords"
+        line: "PermitEmptyPasswords no"
+      become: yes
+    
+    - name: Restart SSH
+      service:
+        name: ssh
+        state: restarted
+      become: yes
